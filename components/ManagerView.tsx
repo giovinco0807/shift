@@ -1,22 +1,22 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { EmployeePreference, ShiftRequirements, GeneratedSchedule, RequirementSlot, Employee, AvailabilityStatus } from '../types';
 import LoadingSpinner from './LoadingSpinner';
 import Alert from './Alert';
 import RequirementSlotModal from './RequirementSlotModal';
 import EmployeeModal from './EmployeeModal'; 
-import { ArrowPathIcon, DocumentTextIcon, UserGroupIcon, LightBulbIcon, ExclamationTriangleIcon, CalendarIcon, PlusCircleIcon, PencilIcon, TrashIcon, UserPlusIcon, UsersIcon as SolidUsersIcon } from '@heroicons/react/24/solid'; 
+import { ArrowPathIcon, DocumentTextIcon, UserGroupIcon, LightBulbIcon, ExclamationTriangleIcon, CalendarIcon, PencilIcon, TrashIcon, UserPlusIcon, UsersIcon as SolidUsersIcon, CloudArrowUpIcon } from '@heroicons/react/24/solid'; 
 
 interface ManagerViewProps {
   employees: Employee[];
-  onAddEmployee: (name: string, role: string, password?: string) => void; // Added password
-  onUpdateEmployee: (employee: Employee) => void; // Employee type now includes password
+  onAddEmployee: (name: string, role: string, email: string, password?: string) => void;
+  onUpdateEmployee: (employee: Employee) => void;
   onDeleteEmployee: (employeeId: string) => void;
   employeePreferences: EmployeePreference[];
   shiftRequirements: ShiftRequirements;
   onUpdateShiftRequirements: (dailyRequirements: { [date: string]: RequirementSlot[] }, notes?: string) => void;
   onUpdateShiftNotes: (notes: string) => void;
   onGenerateSchedule: () => void;
+  onPublishSchedule: () => void;
   generatedSchedule: GeneratedSchedule | null;
   isLoading: boolean;
   error: string | null;
@@ -53,6 +53,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({
   onUpdateShiftRequirements,
   onUpdateShiftNotes,
   onGenerateSchedule,
+  onPublishSchedule,
   generatedSchedule,
   isLoading,
   error,
@@ -114,7 +115,6 @@ const ManagerView: React.FC<ManagerViewProps> = ({
     return `${slots.length}件設定, 計${totalStaff}名`;
   };
 
-  // Employee Modal Handlers
   const handleOpenNewEmployeeModal = () => {
     setEditingEmployee(null);
     setIsEmployeeModalOpen(true);
@@ -130,19 +130,19 @@ const ManagerView: React.FC<ManagerViewProps> = ({
     setEditingEmployee(null);
   };
 
-  const handleEmployeeModalSave = (employeeData: { name: string, role: string, id?: string, password?: string }) => {
-    if (employeeData.id) { // Editing existing employee
+  const handleEmployeeModalSave = (employeeData: { name: string, role: string, email: string, id?: string, password?: string }) => {
+    if (employeeData.id) {
       const existingEmployee = employees.find(emp => emp.id === employeeData.id);
       if (existingEmployee) {
         onUpdateEmployee({ 
-            ...existingEmployee, // Keep original password if not provided
+            ...existingEmployee,
             name: employeeData.name, 
             role: employeeData.role,
-            password: employeeData.password || existingEmployee.password // Use new password if provided, else keep old
+            email: employeeData.email,
         });
       }
-    } else { // Adding new employee
-      onAddEmployee(employeeData.name, employeeData.role, employeeData.password);
+    } else {
+      onAddEmployee(employeeData.name, employeeData.role, employeeData.email, employeeData.password);
     }
     handleEmployeeModalClose();
   };
@@ -153,10 +153,8 @@ const ManagerView: React.FC<ManagerViewProps> = ({
     }
   };
 
-
   return (
     <div className="space-y-8">
-      {/* Employee Management Section */}
       <section className="p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
           <SolidUsersIcon className="h-7 w-7 mr-3 text-gray-700" />
@@ -177,6 +175,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({
               <thead className="bg-gray-100">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">氏名</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">メールアドレス</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">役職</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">アクション</th>
                 </tr>
@@ -185,6 +184,7 @@ const ManagerView: React.FC<ManagerViewProps> = ({
                 {employees.map((employee) => (
                   <tr key={employee.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{employee.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{employee.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{employee.role}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                       <button
@@ -212,7 +212,6 @@ const ManagerView: React.FC<ManagerViewProps> = ({
         )}
       </section>
 
-      {/* Shift Requirements Section */}
       <section className="p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
         <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
             <CalendarIcon className="h-7 w-7 mr-3 text-gray-700" />
@@ -263,7 +262,6 @@ const ManagerView: React.FC<ManagerViewProps> = ({
         </div>
       </section>
 
-      {/* Employee Preferences Section */}
       <section className="p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
             <UserGroupIcon className="h-7 w-7 mr-3 text-gray-700" />
@@ -306,7 +304,6 @@ const ManagerView: React.FC<ManagerViewProps> = ({
         )}
       </section>
 
-      {/* AI Schedule Generation Section */}
       <section className="p-6 bg-gray-50 rounded-xl shadow-lg border border-gray-200">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
             <LightBulbIcon className="h-7 w-7 mr-3 text-yellow-500" />
@@ -323,12 +320,11 @@ const ManagerView: React.FC<ManagerViewProps> = ({
         {error && <Alert message={error} type="error" />}
       </section>
 
-      {/* Generated Schedule Display Section */}
       {generatedSchedule && (
         <section className="mt-8 p-6 bg-white rounded-xl shadow-xl border border-gray-200">
           <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
             <DocumentTextIcon className="h-7 w-7 mr-3 text-gray-700" />
-            生成されたスケジュール ({nextMonthName})
+            生成されたスケジュール案 ({nextMonthName})
           </h2>
           <div className="space-y-4">
             {Object.entries(generatedSchedule).filter(([key]) => key !== 'unassigned_shifts').sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime()).map(([date, shifts]) => (
@@ -358,6 +354,15 @@ const ManagerView: React.FC<ManagerViewProps> = ({
                 </ul>
               </div>
             )}
+          </div>
+          <div className="mt-6 pt-6 border-t border-gray-200">
+             <button
+              onClick={onPublishSchedule}
+              className="w-full bg-gray-600 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+            >
+              <CloudArrowUpIcon className="h-6 w-6" />
+              <span>このスケジュールを従業員に公開する</span>
+            </button>
           </div>
         </section>
       )}

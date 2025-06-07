@@ -149,7 +149,7 @@ export const generateScheduleWithAI = async (
         }
     });
 
-    let jsonStr = response.text.trim();
+    let jsonStr = response.text ? response.text.trim() : '';
     
     const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
     const match = jsonStr.match(fenceRegex);

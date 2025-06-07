@@ -1,53 +1,63 @@
+import { Timestamp } from 'firebase/firestore'; // Timestampをインポート
 
 export interface Employee {
   id: string;
   name: string;
-  role: string; // 従業員の役職やランク (例: 'Senior Staff', 'Junior Staff', 'Shift Lead')
-  password?: string; // 注意: デモ用。本番環境ではハッシュ化されたパスワードを安全に扱う必要があります。
+  email: string;
+  role: string;
 }
 
 export enum AvailabilityStatus {
-  PREFFERED = '希望', // 希望
-  AVAILABLE = '可能', // 可能
-  UNAVAILABLE = '不可', // 不可
+  PREFFERED = '希望',
+  AVAILABLE = '可能',
+  UNAVAILABLE = '不可',
 }
 
 export interface TimeSlotPreference {
-  id: string; // Reactのキー用、または編集時の識別用
-  startTime: string; // HH:MM 形式
-  endTime: string; // HH:MM 形式
+  id: string;
+  startTime: string;
+  endTime: string;
   status: AvailabilityStatus;
 }
 
 export interface EmployeePreference {
   employeeId: string;
   employeeName: string;
-  detailedAvailability: { // 日付ごとの詳細な希望
-    [date: string]: TimeSlotPreference[]; // 例: "2024-08-15": [{startTime: "09:00", endTime: "12:00", status: PREFFERED}, ...]
+  detailedAvailability: {
+    [date: string]: TimeSlotPreference[];
   };
-  generalNotes: string; // その他の希望やメモ
+  generalNotes: string;
 }
 
 export interface RequirementSlot {
-  id: string; // Reactのキー用のユニークID
-  timeRange: string; // 例: "09:00 - 17:00"
-  staffCount: number; // 例: 2
-  role: string; // 任意: 例: "Supervisor", "Cashier", "Staff"
+  id:string;
+  timeRange: string;
+  staffCount: number;
+  role: string;
 }
 
 export interface ShiftRequirements {
-  dailyRequirements: { // 日付ごとの要件
-    [date: string]: RequirementSlot[]; // 例: "2024-08-15": [{timeRange: "09:00-17:00", staffCount: 2, role: "Staff"}, ...]
+  dailyRequirements: {
+    [date: string]: RequirementSlot[];
   };
-  notes: string; // 任意: 要件に関する一般的なメモ
+  notes: string;
 }
 
-export interface GeneratedSchedule {
-  [dayOrDate: string]: string[]; // AIの出力に応じて曜日キーまたは日付キー
+export type GeneratedSchedule = {
+  [dayOrDate: string]: string[];
+} & {
   unassigned_shifts?: string[];
-}
+};
 
-// --- Authentication Types ---
+// --- 新しく追加 ---
+export interface PublishedSchedule {
+  id: string; // ドキュメントID (例: '2025-07')
+  schedule: GeneratedSchedule;
+  publishedAt: Timestamp; // 公開日時
+  month: string; // 対象月 (例: '2025年7月')
+}
+// --- ここまで ---
+
 export enum UserRole {
   EMPLOYEE = 'EMPLOYEE',
   MANAGER = 'MANAGER',
@@ -56,5 +66,6 @@ export enum UserRole {
 export interface AuthUser {
   id: string;
   name: string;
+  email: string;
   role: UserRole;
 }

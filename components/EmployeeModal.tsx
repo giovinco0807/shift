@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
 import { Employee } from '../types';
-import { XMarkIcon, UserCircleIcon, BriefcaseIcon, KeyIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, UserCircleIcon, BriefcaseIcon, KeyIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
 interface EmployeeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (employeeData: { name: string, role: string, id?: string, password?: string }) => void;
+  onSave: (employeeData: { name: string, role: string, email: string, id?: string, password?: string }) => void; // emailを追加
   employeeToEdit?: Employee | null;
 }
 
@@ -18,6 +17,7 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
+  const [email, setEmail] = useState(''); // emailのstateを追加
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -26,11 +26,13 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
       if (employeeToEdit) {
         setName(employeeToEdit.name);
         setRole(employeeToEdit.role);
-        setPassword(''); // Editing mode: clear password field, only update if new one is entered
+        setEmail(employeeToEdit.email); // 編集時にemailをセット
+        setPassword('');
       } else {
         setName('');
         setRole('');
-        setPassword(''); // New employee mode
+        setEmail(''); // 新規作成時にクリア
+        setPassword('');
       }
       setError(null);
     }
@@ -38,29 +40,29 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !role.trim()) {
-      setError('氏名と役職の両方を入力してください。');
+    if (!name.trim() || !role.trim() || !email.trim()) {
+      setError('氏名、役職、メールアドレスは必須です。');
       return;
     }
-    if (!employeeToEdit && !password.trim()) { // New employee requires password
-        setError('新しい従業員のパスワードを入力してください。');
-        return;
+    if (!employeeToEdit && !password.trim()) {
+      setError('新しい従業員のパスワードを入力してください。');
+      return;
     }
     setError(null);
     
-    const employeeData: { name: string, role: string, id?: string, password?: string } = {
+    const employeeData: { name: string, role: string, email: string, id?: string, password?: string } = {
         id: employeeToEdit?.id,
         name: name.trim(),
         role: role.trim(),
+        email: email.trim(), // emailをデータに含める
     };
 
-    if (password.trim()) { // Only include password if it's entered
+    if (password.trim()) {
         employeeData.password = password.trim();
-    } else if (!employeeToEdit) { // New employee must have a password
+    } else if (!employeeToEdit) {
          setError('新しい従業員のパスワードを入力してください。');
         return;
     }
-    // If editing and password field is empty, old password remains (handled in App.tsx)
 
     onSave(employeeData);
   };
@@ -106,9 +108,26 @@ const EmployeeModal: React.FC<EmployeeModalProps> = ({
               value={role}
               onChange={(e) => setRole(e.target.value)}
               className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg p-3 focus:ring-black focus:border-black transition-colors placeholder-gray-400"
-              placeholder="例: スタッフ, リーダー"
+              placeholder="例: スタッフ, リーダー, 管理者"
               required
             />
+          </div>
+          <div>
+            <label htmlFor="employeeEmail" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <EnvelopeIcon className="h-5 w-5 mr-2 text-gray-500" />
+              メールアドレス
+            </label>
+            <input
+              type="email"
+              id="employeeEmail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full bg-white border border-gray-300 text-gray-900 rounded-lg p-3 focus:ring-black focus:border-black transition-colors placeholder-gray-400"
+              placeholder="login@example.com"
+              required
+              disabled={!!employeeToEdit} // 編集時はメールアドレスを変更不可にする
+            />
+            {employeeToEdit && <p className="text-xs text-gray-500 mt-1">メールアドレス（ログインID）は編集できません。</p>}
           </div>
           <div>
             <label htmlFor="employeePassword" className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
