@@ -1,0 +1,5 @@
+{
+  "name": "AI Shift Scheduler",
+  "description": "An application for employees to submit shift preferences and for managers to generate schedules with AI assistance. Employees can input their availability and requests, and managers can define shift needs and use AI to create an optimal schedule.",
+  "requestFramePermissions": []
+}
